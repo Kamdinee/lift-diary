@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: liftdiary
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  server:
+    build: ./server
+    ports:
+      - "3001:3001"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/liftdiary?schema=public
+      - PORT=3001
+      - JWT_ACCESS_SECRET=super_secret_access_key_change_me
+      - JWT_REFRESH_SECRET=super_secret_refresh_key_change_me
+      - RAPIDAPI_KEY=877ae04e97mshff737736f67d8d7p12ffe1jsnc783bd63a737
+      - RAPIDAPI_HOST=exercisedb.p.rapidapi.com
+    depends_on:
+      - postgres
+    command: sh -c "npx prisma db push && npm start"
+
+  client:
+    build: ./client
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3001/api
+    depends_on:
+      - server
+
+volumes:
+  postgres_data:
